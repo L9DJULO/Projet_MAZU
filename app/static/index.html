@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoExpert AI - Inspection de vehicules</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>AutoExpert AI</h1>
+    <p class="subtitle">Inspection automatisee de vehicules - Computer Vision, Machine Learning, Agents</p>
+    <span id="mode-badge" class="badge">mode...</span>
+  </header>
+
+  <main>
+    <section class="card" id="form-card">
+      <h2>1 - Informations du vehicule</h2>
+      <form id="inspect-form">
+        <div class="grid">
+          <label>Marque
+            <input name="make" value="Renault" required />
+          </label>
+          <label>Modele
+            <input name="model" value="Clio" required />
+          </label>
+          <label>Annee
+            <input name="year" type="number" value="2017" min="1980" max="2030" required />
+          </label>
+          <label>Kilometrage (km)
+            <input name="mileage_km" type="number" value="98000" min="0" required />
+          </label>
+          <label>VIN (optionnel)
+            <input name="vin" value="VF1RFA00123456789" />
+          </label>
+          <label>Valeur Argus connue EUR (optionnel)
+            <input name="base_market_value" type="number" value="" min="0" />
+          </label>
+        </div>
+
+        <label class="file-label">Photos / video 360 du vehicule (optionnel)
+          <input name="images" type="file" accept="image/*" multiple />
+        </label>
+
+        <div class="actions">
+          <button type="submit" id="submit-btn">Lancer l'inspection</button>
+          <button type="button" id="sample-btn" class="secondary">Charger un exemple</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="loading" class="card hidden">
+      <div class="spinner"></div>
+      <p>L'agent orchestrateur coordonne les sous-agents...</p>
+    </section>
+
+    <section id="results" class="hidden">
+      <div class="card summary-card">
+        <h2>Resume executif</h2>
+        <p id="exec-summary"></p>
+        <div class="kpis" id="kpis"></div>
+      </div>
+
+      <div class="columns">
+        <div class="card">
+          <h3>Dommages detectes <span class="tag" id="vision-provider"></span></h3>
+          <ul id="damages-list" class="damage-list"></ul>
+        </div>
+
+        <div class="card">
+          <h3>Evaluation mecanique</h3>
+          <p id="mech-summary"></p>
+          <table id="repair-table" class="mini-table"></table>
+        </div>
+
+        <div class="card">
+          <h3>Historique <span class="tag" id="history-source"></span></h3>
+          <ul id="history-list" class="kv-list"></ul>
+        </div>
+
+        <div class="card">
+          <h3>Valorisation</h3>
+          <ul id="valuation-list" class="kv-list"></ul>
+        </div>
+
+        <div class="card negotiation-card">
+          <h3>Negociation</h3>
+          <p id="nego-summary"></p>
+          <ul id="nego-args"></ul>
+        </div>
+
+        <div class="card">
+          <h3>Journal des agents</h3>
+          <ol id="trace-list" class="trace-list"></ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Projet academique - Microsoft Azure - Computer Vision + Azure ML + Agents (Ollama)</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

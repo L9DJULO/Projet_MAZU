@@ -1,0 +1,26 @@
+services:
+  web:
+    build: .
+    container_name: autoexpert-web
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: autoexpert-ollama
+    profiles: ["llm"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama-data:

@@ -1,0 +1,34 @@
+[
+  {
+    "make": "Renault",
+    "model": "Clio",
+    "year": 2017,
+    "mileage_km": 98000,
+    "vin": "VF1RFA00123456789",
+    "base_market_value": null
+  },
+  {
+    "make": "BMW",
+    "model": "Serie 3",
+    "year": 2014,
+    "mileage_km": 168000,
+    "vin": "WBA3B1C50EK123456",
+    "base_market_value": null
+  },
+  {
+    "make": "Tesla",
+    "model": "Model 3",
+    "year": 2021,
+    "mileage_km": 42000,
+    "vin": "5YJ3E1EA7MF000111",
+    "base_market_value": 32000
+  },
+  {
+    "make": "Peugeot",
+    "model": "208",
+    "year": 2012,
+    "mileage_km": 35000,
+    "vin": "VF3CCHMZ0CT000999",
+    "base_market_value": null
+  }
+]
