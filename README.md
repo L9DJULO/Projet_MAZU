@@ -4,14 +4,14 @@
 > Un systeme qui inspecte un vehicule a partir de photos, evalue son etat, et
 > orchestre les demarches d'evaluation et de negociation via des agents.
 
-Le systeme combine trois briques au programme du cours :
+Le systeme demontre les **4 capacites** exigees par le sujet :
 
-| Brique | Technologie | Role |
-|--------|-------------|------|
-| **1 - Computer Vision** | Azure AI Vision (Cognitive Services) | Detecte les dommages visibles (rayures, bosses, fissures, usure pneus...) |
-| **3 - Machine Learning** | Azure Machine Learning | Estime le cout de reparation et la valeur marchande |
-| **4 - Agentique** | Agent orchestrateur + sous-agents (Ollama) | Coordonne evaluation, historique, rapport, negociation |
-| **2 - Edge / Docker** | FastAPI + Docker | Application web locale qui heberge le tout |
+| Capacite | Technologie | Role |
+|----------|-------------|------|
+| **(1) Cognitive** | Azure Computer Vision (Image Analysis ou Custom Vision) | Detecte les dommages visibles (rayures, bosses, fissures, usure pneus...) |
+| **(2) Edge** | FastAPI + Docker (execution locale) | Webapp qui tourne en local sur le laptop |
+| **(3) Machine Learning** | Azure ML (endpoint temps reel, comme le tutoriel) | Estime le cout de reparation et la valeur marchande |
+| **(4) Agentique** | Agent orchestrateur + 4 sous-agents (Ollama ou Gemini) | Coordonne evaluation, historique, rapport, negociation |
 
 > Le projet demarre sans aucun compte Azure ni cle. Par defaut tout
 > fonctionne en mode **mock** (services simules, deterministes). Le code est
@@ -108,11 +108,22 @@ Projet_MAZU/
 
 ---
 
+## Documentation
+
+| Document | Contenu |
+|----------|---------|
+| [docs/rapport.md](docs/rapport.md) | Rapport academique complet (a rendre) |
+| [docs/architecture.md](docs/architecture.md) | Schema d'architecture et flux d'orchestration |
+| [docs/azure-deployment.md](docs/azure-deployment.md) | Brancher le projet sur Azure (suit le tutoriel ML Designer du cours) |
+| [docs/mvp-et-use-cases.md](docs/mvp-et-use-cases.md) | MVP, cas d'usage multiples, iterations |
+| [docs/presentation.md](docs/presentation.md) | Script de soutenance 15 min + mapping des 4 capacites |
+
 ## Passer en mode Azure reel
 
 1. Copier .env.example en .env
 2. Renseigner AZURE_MODE=real + les cles Azure Vision et/ou Azure ML.
-3. (Optionnel) LLM_MODE=ollama pour des syntheses redigees par un LLM local.
+3. (Optionnel) LLM_MODE=ollama ou LLM_MODE=gemini pour des syntheses par LLM.
 
-Le detail de l'architecture Azure cible (ressources, deploiement, couts) est
-dans [docs/rapport.md](docs/rapport.md).
+Le detail pas-a-pas (Computer Vision, Custom Vision, entrainement et deploiement
+Azure ML, consommation REST, nettoyage) est dans
+[docs/azure-deployment.md](docs/azure-deployment.md).

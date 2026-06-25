@@ -33,7 +33,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "azure_mode": s.azure_mode,
-        "vision": "azure" if s.vision_is_real else "mock",
+        "vision": s.vision_provider if s.vision_is_real else "mock",
         "ml": "azure" if s.ml_is_real else "mock",
         "llm_mode": s.llm_mode,
         "history": s.history_api_base,

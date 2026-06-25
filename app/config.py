@@ -11,22 +11,35 @@ class Settings(BaseSettings):
 
     azure_mode: Literal["mock", "real"] = "mock"
 
+    vision_provider: Literal["image_analysis", "custom_vision"] = "image_analysis"
     azure_vision_endpoint: str = ""
     azure_vision_key: str = ""
+    custom_vision_endpoint: str = ""
+    custom_vision_key: str = ""
+    custom_vision_project_id: str = ""
+    custom_vision_iteration: str = ""
 
     azure_ml_endpoint: str = ""
     azure_ml_key: str = ""
+    azure_ml_input_name: str = "input1"
+    azure_ml_output_name: str = "output1"
 
-    llm_mode: Literal["ollama", "template"] = "template"
+    llm_mode: Literal["template", "ollama", "gemini"] = "template"
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-1.5-flash"
 
     history_api_base: str = "mock"
     history_api_key: str = ""
 
     @property
     def vision_is_real(self) -> bool:
-        return self.azure_mode == "real" and bool(self.azure_vision_key)
+        if self.azure_mode != "real":
+            return False
+        if self.vision_provider == "custom_vision":
+            return bool(self.custom_vision_key)
+        return bool(self.azure_vision_key)
 
     @property
     def ml_is_real(self) -> bool:

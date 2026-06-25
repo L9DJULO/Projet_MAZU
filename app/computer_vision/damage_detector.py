@@ -23,6 +23,8 @@ _ZONE_DAMAGES = {
 def detect_damages(image_bytes_list: list[bytes]) -> VisionResult:
     settings = get_settings()
     if settings.vision_is_real:
+        if settings.vision_provider == "custom_vision":
+            return _detect_with_custom_vision(image_bytes_list)
         return _detect_with_azure(image_bytes_list)
     return _detect_mock(image_bytes_list)
 
@@ -99,6 +101,74 @@ def _detect_with_azure(image_bytes_list: list[bytes]) -> VisionResult:
         damages=damages,
         images_analyzed=len(image_bytes_list),
         provider="azure",
+    )
+
+
+def _detect_with_custom_vision(image_bytes_list: list[bytes]) -> VisionResult:
+    import httpx
+
+    settings = get_settings()
+    url = (
+        f"{settings.custom_vision_endpoint}/customvision/v3.0/Prediction/"
+        f"{settings.custom_vision_project_id}/detect/iterations/"
+        f"{settings.custom_vision_iteration}/image"
+    )
+    headers = {
+        "Prediction-Key": settings.custom_vision_key,
+        "Content-Type": "application/octet-stream",
+    }
+
+    damages: list[Damage] = []
+    for image_bytes in image_bytes_list:
+        resp = httpx.post(url, headers=headers, content=image_bytes, timeout=30)
+        resp.raise_for_status()
+        for pred in resp.json().get("predictions", []):
+            if pred.get("probability", 0) < 0.5:
+                continue
+            damages.append(_map_custom_vision_prediction(pred))
+
+    return VisionResult(
+        damages=damages,
+        images_analyzed=len(image_bytes_list),
+        provider="azure_custom_vision",
+    )
+
+
+def _map_custom_vision_prediction(pred: dict) -> Damage:
+    name = pred.get("tagName", "").lower()
+    type_map = {
+        "scratch": DamageType.SCRATCH, "rayure": DamageType.SCRATCH,
+        "dent": DamageType.DENT, "bosse": DamageType.DENT,
+        "crack": DamageType.CRACK, "fissure": DamageType.CRACK,
+        "rust": DamageType.RUST, "corrosion": DamageType.RUST,
+        "tire": DamageType.TIRE_WEAR, "pneu": DamageType.TIRE_WEAR,
+        "glass": DamageType.BROKEN_GLASS, "vitre": DamageType.BROKEN_GLASS,
+    }
+    dtype = DamageType.SCRATCH
+    for key, value in type_map.items():
+        if key in name:
+            dtype = value
+            break
+
+    prob = pred.get("probability", 0.0)
+    severity = Severity.SEVERE if prob > 0.85 else Severity.MODERATE if prob > 0.65 else Severity.MINOR
+
+    box = pred.get("boundingBox", {})
+    bbox = None
+    if box:
+        bbox = [
+            int(box.get("left", 0) * 1000),
+            int(box.get("top", 0) * 1000),
+            int(box.get("width", 0) * 1000),
+            int(box.get("height", 0) * 1000),
+        ]
+
+    return Damage(
+        type=dtype,
+        severity=severity,
+        location=pred.get("tagName", "zone detectee"),
+        confidence=round(prob, 2),
+        bounding_box=bbox,
     )
 
 
