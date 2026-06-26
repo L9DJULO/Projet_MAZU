@@ -40,8 +40,9 @@ class ReportAgent(BaseAgent):
             f"Offre d'achat recommandee : {negotiation.recommended_offer:.0f} EUR."
         )
         prompt = (
-            "Tu es un expert automobile. Redige un resume executif de 3 a 4 "
-            "phrases, clair et professionnel, a partir de ces donnees:\n"
+            "Tu es un expert automobile. Synthese factuelle de 2 a 3 phrases maximum. "
+            "Interdits: emoji, gras, markdown, titre, formule d'introduction ou de "
+            "politesse. Uniquement des informations utiles, a partir de ces donnees:\n"
             f"- Vehicule: {vehicle.make} {vehicle.model} {vehicle.year}, {vehicle.mileage_km} km\n"
             f"- Etat: {mechanical.condition_label} ({mechanical.condition_score}/100)\n"
             f"- Dommages: {len(vision.damages)}\n"

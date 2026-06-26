@@ -65,17 +65,18 @@ class NegotiationAgent(BaseAgent):
             f"juste={fair:.0f} offre={recommended_offer:.0f} (-{discount*100:.0f}%)",
         )
 
-        fallback = (
-            f"Sur la base d'une valeur juste de {fair:.0f} EUR, nous recommandons "
-            f"une offre d'ouverture a {recommended_offer:.0f} EUR (decote de "
-            f"{discount*100:.0f}%), en ne depassant pas {walk_away:.0f} EUR."
+        # Montants calcules en dur (fiables) ; le LLM ne fournit que l'argument.
+        argument_prompt = (
+            "Donne UN seul argument de negociation, une phrase courte et factuelle, "
+            "sans emoji, sans markdown, sans introduction, sans inventer de chiffres.\n"
+            f"Leviers disponibles: {arguments}."
         )
-        prompt = (
-            "Tu es un negociateur automobile. En 2 phrases, conseille l'acheteur. "
-            f"Valeur juste: {fair:.0f} EUR. Offre conseillee: {recommended_offer:.0f} EUR. "
-            f"Prix max: {walk_away:.0f} EUR. Leviers: {arguments}."
+        argument = generate_text(argument_prompt, arguments[0])
+        summary = (
+            f"Offre d'ouverture: {recommended_offer:.0f} EUR\n"
+            f"Prix max: {walk_away:.0f} EUR\n"
+            f"Argument cle: {argument}"
         )
-        summary = generate_text(prompt, fallback)
 
         self._log("termine", "strategie de negociation prete")
         return NegotiationStrategy(

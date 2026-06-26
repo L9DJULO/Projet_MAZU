@@ -24,11 +24,13 @@ class Settings(BaseSettings):
     azure_ml_input_name: str = "input1"
     azure_ml_output_name: str = "output1"
 
-    llm_mode: Literal["template", "ollama", "gemini"] = "template"
+    llm_mode: Literal["template", "ollama", "gemini", "mistral"] = "template"
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-1.5-flash"
+    mistral_api_key: str = ""
+    mistral_model: str = "mistral-small-latest"
 
     history_api_base: str = "mock"
     history_api_key: str = ""
