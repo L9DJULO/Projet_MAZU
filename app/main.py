@@ -28,6 +28,19 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 @app.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
     html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+
+    # Cache-busting : on versionne les assets par leur date de modification.
+    # La page etant servie en no-store, le navigateur recharge toujours la bonne
+    # version de app.js / style.css des qu'un fichier change.
+    def _ver(name: str) -> str:
+        try:
+            return str(int((STATIC_DIR / name).stat().st_mtime))
+        except OSError:
+            return "0"
+
+    for asset in ("app.js", "style.css"):
+        html = html.replace(f"/static/{asset}", f"/static/{asset}?v={_ver(asset)}")
+
     return HTMLResponse(
         content=html,
         headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
