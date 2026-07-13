@@ -41,7 +41,7 @@ def test_full_orchestration():
     assert report.negotiation.recommended_offer <= report.negotiation.fair_value
     assert report.mechanical.condition_score >= 0
     agents_seen = {step["agent"] for step in trace}
-    assert {"orchestrateur", "evaluation", "historique", "negociation", "rapport"} <= agents_seen
+    assert {"orchestrateur", "evaluation", "negociation", "rapport"} <= agents_seen
 
 
 def test_premium_make_costs_more():

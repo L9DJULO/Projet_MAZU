@@ -3,7 +3,6 @@ from __future__ import annotations
 from app.agents.base import AgentTrace, BaseAgent
 from app.llm import generate_text
 from app.models.schemas import (
-    HistoryReport,
     MarketValuation,
     MechanicalAssessment,
     NegotiationStrategy,
@@ -18,7 +17,6 @@ class NegotiationAgent(BaseAgent):
         self,
         valuation: MarketValuation,
         mechanical: MechanicalAssessment,
-        history: HistoryReport,
     ) -> NegotiationStrategy:
         self._log("demarrage", "construction de la strategie de prix")
 
@@ -32,25 +30,13 @@ class NegotiationAgent(BaseAgent):
             arguments.append(
                 f"Reparations a prevoir : ~{mechanical.cost_estimate.total_repair_cost:.0f} EUR."
             )
-        if history.accidents:
-            discount += 0.05
-            arguments.append(
-                f"{history.accidents} sinistre(s) au carnet : decote justifiee."
-            )
-        if not history.odometer_consistent:
-            discount += 0.06
-            arguments.append("Kilometrage potentiellement incoherent : prudence.")
-        if history.open_recalls:
-            discount += 0.02
-            arguments.append("Rappel constructeur non solde a faire realiser.")
+        if mechanical.total_loss:
+            discount += 0.10
+            arguments.append("Vehicule assimilable a une epave : reparation non rentable.")
         if mechanical.condition_score < 50:
             discount += 0.04
             arguments.append(
                 f"Etat general '{mechanical.condition_label}' ({mechanical.condition_score}/100)."
-            )
-        if history.previous_owners >= 3:
-            arguments.append(
-                f"{history.previous_owners} proprietaires successifs."
             )
 
         discount = min(discount, 0.30)

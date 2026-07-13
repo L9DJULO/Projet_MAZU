@@ -139,18 +139,6 @@ function render({ report, trace }) {
     .map(l => `<tr><td>${l.label}</td><td>${eur(l.estimated_cost)}</td></tr>`).join("")
     + `<tr><td><b>Total</b></td><td><b>${eur(report.mechanical.cost_estimate.total_repair_cost)}</b></td></tr>`;
 
-  const h = report.history;
-  const flag = (bad) => bad ? '<span class="flag-bad">Oui</span>' : '<span class="flag-ok">Non</span>';
-  document.getElementById("history-source").textContent = h.source;
-  document.getElementById("history-list").innerHTML = `
-    <li><span class="k">Sinistres</span><span class="v">${h.accidents}</span></li>
-    <li><span class="k">Proprietaires</span><span class="v">${h.previous_owners}</span></li>
-    <li><span class="k">Km coherent</span><span class="v">${h.odometer_consistent ? '<span class="flag-ok">Oui</span>' : '<span class="flag-bad">Non</span>'}</span></li>
-    <li><span class="k">Vol signale</span><span class="v">${flag(h.stolen_flag)}</span></li>
-    <li><span class="k">Rappels ouverts</span><span class="v">${h.open_recalls}</span></li>
-    <li><span class="k">Notes</span><span class="v">${h.notes}</span></li>
-  `;
-
   const valuationCard = document.getElementById("valuation-card");
   const negotiationCard = document.getElementById("negotiation-card");
   if (val) {

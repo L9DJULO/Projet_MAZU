@@ -50,7 +50,6 @@ def health() -> dict:
         "vision_endpoint": s.azure_vision_endpoint if s.vision_is_local_http else None,
         "ml": "azure" if s.ml_is_real else "mock",
         "llm_mode": s.llm_mode,
-        "history": s.history_api_base,
     }
 
 

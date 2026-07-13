@@ -83,17 +83,6 @@ class MechanicalAssessment(BaseModel):
     total_loss: bool = False
 
 
-class HistoryReport(BaseModel):
-    vin: Optional[str]
-    accidents: int = 0
-    previous_owners: int = 1
-    odometer_consistent: bool = True
-    stolen_flag: bool = False
-    open_recalls: int = 0
-    notes: str = ""
-    source: str = "mock"
-
-
 class NegotiationStrategy(BaseModel):
     fair_value: float
     recommended_offer: float
@@ -106,7 +95,6 @@ class InspectionReport(BaseModel):
     vehicle: VehicleInfo
     vision: VisionResult
     mechanical: MechanicalAssessment
-    history: HistoryReport
     valuation: Optional[MarketValuation] = None
     negotiation: Optional[NegotiationStrategy] = None
     executive_summary: str

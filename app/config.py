@@ -32,9 +32,6 @@ class Settings(BaseSettings):
     mistral_api_key: str = ""
     mistral_model: str = "mistral-small-latest"
 
-    history_api_base: str = "mock"
-    history_api_key: str = ""
-
     @property
     def vision_is_local_http(self) -> bool:
         return self.vision_provider == "local_http" and bool(self.azure_vision_endpoint)

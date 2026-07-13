@@ -5,7 +5,6 @@ from typing import Iterator
 
 from app.agents.base import AgentTrace
 from app.agents.evaluation_agent import EvaluationAgent
-from app.agents.history_agent import HistoryAgent
 from app.agents.negotiation_agent import NegotiationAgent
 from app.agents.report_agent import ReportAgent
 from app.computer_vision import detect_damages
@@ -17,8 +16,6 @@ AGENTS = [
     {"id": "computer_vision", "label": "Computer Vision", "kind": "service"},
     {"id": "evaluation", "label": "Evaluation mecanique", "kind": "agent"},
     {"id": "machine_learning", "label": "Machine Learning", "kind": "service"},
-    {"id": "historique", "label": "Historique", "kind": "agent"},
-    {"id": "api_externe", "label": "API historique", "kind": "service"},
     {"id": "negociation", "label": "Negociation", "kind": "agent"},
     {"id": "rapport", "label": "Rapport", "kind": "agent"},
 ]
@@ -44,12 +41,9 @@ class OrchestratorAgent:
         trace.log(self.name, "delegation", "Sous-agent EVALUATION")
         evaluation = EvaluationAgent(trace).run(vision, vehicle)
 
-        trace.log(self.name, "delegation", "Sous-agent HISTORIQUE")
-        history = HistoryAgent(trace).run(vehicle)
-
         # Valorisation et negociation ne sont possibles que si l'on connait le
         # vehicule (marque/modele/annee/km). En mode "image seule", on s'arrete
-        # a l'evaluation mecanique et a l'historique.
+        # a l'evaluation mecanique.
         valuation = None
         negotiation = None
         if vehicle.has_market_info:
@@ -64,7 +58,7 @@ class OrchestratorAgent:
             )
 
             trace.log(self.name, "delegation", "Sous-agent NEGOCIATION")
-            negotiation = NegotiationAgent(trace).run(valuation, evaluation, history)
+            negotiation = NegotiationAgent(trace).run(valuation, evaluation)
         else:
             trace.log(
                 self.name,
@@ -74,7 +68,7 @@ class OrchestratorAgent:
 
         trace.log(self.name, "delegation", "Sous-agent RAPPORT")
         report = ReportAgent(trace).run(
-            vehicle, vision, evaluation, history, valuation, negotiation
+            vehicle, vision, evaluation, valuation, negotiation
         )
 
         trace.log(self.name, "termine", "inspection complete")
@@ -122,15 +116,6 @@ class OrchestratorAgent:
                   f"Etat {evaluation.condition_score}/100 ({evaluation.condition_label}), "
                   f"reparations {evaluation.cost_estimate.total_repair_cost:.0f} EUR.")
 
-        yield msg("orchestrateur", "historique", "delegation",
-                  f"Verifie l'historique du vehicule (VIN {vehicle.vin or 'N/A'}).")
-        yield msg("historique", "api_externe", "delegation",
-                  "Requete a l'API d'historique externe.")
-        history = HistoryAgent(trace).run(vehicle)
-        yield msg("api_externe", "historique", "resultat",
-                  f"{history.accidents} sinistre(s), {history.previous_owners} proprietaire(s).")
-        yield msg("historique", "orchestrateur", "resultat", history.notes)
-
         # Valorisation et negociation uniquement si le vehicule est identifie
         # (marque/modele/annee/km). En mode "image seule", on les ignore.
         valuation = None
@@ -146,7 +131,7 @@ class OrchestratorAgent:
 
             yield msg("orchestrateur", "negociation", "delegation",
                       "Construis une strategie de prix et une offre d'achat.")
-            negotiation = NegotiationAgent(trace).run(valuation, evaluation, history)
+            negotiation = NegotiationAgent(trace).run(valuation, evaluation)
             yield msg("negociation", "orchestrateur", "resultat",
                       f"Offre conseillee: {negotiation.recommended_offer:.0f} EUR "
                       f"(max {negotiation.walk_away_price:.0f} EUR).")
@@ -157,7 +142,7 @@ class OrchestratorAgent:
         yield msg("orchestrateur", "rapport", "delegation",
                   "Consolide toutes les analyses en un rapport final.")
         report = ReportAgent(trace).run(
-            vehicle, vision, evaluation, history, valuation, negotiation
+            vehicle, vision, evaluation, valuation, negotiation
         )
         yield msg("rapport", "orchestrateur", "resultat",
                   "Rapport d'inspection genere.")

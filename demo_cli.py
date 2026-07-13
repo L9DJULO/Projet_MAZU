@@ -27,7 +27,6 @@ def run_one(data: dict) -> None:
           f"({report.mechanical.condition_score}/100)")
     print(f"  Dommages detectes  : {len(report.vision.damages)} ({report.vision.provider})")
     print(f"  Cout reparations   : {euros(report.mechanical.cost_estimate.total_repair_cost)}")
-    print(f"  Historique         : {report.history.notes}")
     print(f"  Valeur ajustee     : {euros(report.valuation.adjusted_value)}")
     print(f"  Offre recommandee  : {euros(report.negotiation.recommended_offer)} "
           f"(max {euros(report.negotiation.walk_away_price)})")

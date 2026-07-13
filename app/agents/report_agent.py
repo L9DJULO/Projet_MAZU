@@ -6,7 +6,6 @@ from typing import Optional
 from app.agents.base import AgentTrace, BaseAgent
 from app.llm import generate_text
 from app.models.schemas import (
-    HistoryReport,
     InspectionReport,
     MarketValuation,
     MechanicalAssessment,
@@ -25,7 +24,6 @@ class ReportAgent(BaseAgent):
         vehicle: VehicleInfo,
         vision: VisionResult,
         mechanical: MechanicalAssessment,
-        history: HistoryReport,
         valuation: Optional[MarketValuation],
         negotiation: Optional[NegotiationStrategy],
     ) -> InspectionReport:
@@ -47,7 +45,6 @@ class ReportAgent(BaseAgent):
             f"Etat general : {mechanical.condition_label} "
             f"({mechanical.condition_score}/100), {len(vision.damages)} dommage(s) "
             f"detecte(s). Cout des reparations : {mechanical.cost_estimate.total_repair_cost:.0f} EUR. "
-            f"Historique : {history.notes} "
             f"{valo_line}{offer_line}"
         )
         prompt = (
@@ -58,7 +55,6 @@ class ReportAgent(BaseAgent):
             f"- Etat: {mechanical.condition_label} ({mechanical.condition_score}/100)\n"
             f"- Dommages: {len(vision.damages)}\n"
             f"- Reparations: {mechanical.cost_estimate.total_repair_cost:.0f} EUR\n"
-            f"- Historique: {history.notes}\n"
             + (f"- Valeur ajustee: {valuation.adjusted_value:.0f} EUR\n" if valuation else "")
             + (f"- Offre conseillee: {negotiation.recommended_offer:.0f} EUR" if negotiation else "")
         )
@@ -69,7 +65,6 @@ class ReportAgent(BaseAgent):
             vehicle=vehicle,
             vision=vision,
             mechanical=mechanical,
-            history=history,
             valuation=valuation,
             negotiation=negotiation,
             executive_summary=executive_summary,

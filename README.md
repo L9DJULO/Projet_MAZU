@@ -11,7 +11,7 @@ Le systeme demontre les **4 capacites** exigees par le sujet :
 | **(1) Cognitive** | Azure Computer Vision (Image Analysis ou Custom Vision) | Detecte les dommages visibles (rayures, bosses, fissures, usure pneus...) |
 | **(2) Edge** | FastAPI + Docker (execution locale) | Webapp qui tourne en local sur le laptop |
 | **(3) Machine Learning** | Azure ML (endpoint temps reel, comme le tutoriel) | Estime le cout de reparation et la valeur marchande |
-| **(4) Agentique** | Agent orchestrateur + 4 sous-agents (Ollama ou Gemini) | Coordonne evaluation, historique, rapport, negociation |
+| **(4) Agentique** | Agent orchestrateur + 3 sous-agents (Ollama ou Gemini) | Coordonne evaluation, rapport, negociation |
 
 > Le projet demarre sans aucun compte Azure ni cle. Par defaut tout
 > fonctionne en mode **mock** (services simules, deterministes). Le code est
@@ -63,7 +63,7 @@ docker compose --profile llm up --build
 2. Renseigner les infos du vehicule (un bouton "Charger un exemple" existe).
 3. Optionnel : ajouter des photos / une video 360.
 4. Cliquer "Lancer l'inspection".
-5. Le rapport s'affiche : dommages, cout des reparations, historique,
+5. Le rapport s'affiche : dommages, cout des reparations,
    valorisation, strategie de negociation, et le journal des agents.
 
 ---
@@ -101,12 +101,11 @@ docker compose up --build
 4. Commenter le rapport qui s'affiche :
    - **Dommages detectes** = capacite Computer Vision.
    - **Evaluation mecanique + cout** et **valorisation** = capacite Machine Learning.
-   - **Historique** = appel a l'API externe.
    - **Negociation** = sous-agent de negociation.
    - **Journal des agents** (en bas) = montre l'orchestrateur qui delegue aux
      sous-agents, dans l'ordre : capacite Agentique.
-5. Relancer avec un autre exemple pour montrer un profil different (ex. saisir un
-   vieux vehicule a faible kilometrage declenche l'alerte "km incoherent").
+5. Relancer avec un autre exemple pour montrer un profil different (ex. une photo
+   d'epave fait chuter l'etat et bascule le vehicule en perte totale).
 
 ### Brancher la vision sur un conteneur local (Custom Vision exporte)
 
@@ -190,12 +189,10 @@ Projet_MAZU/
 │   ├── models/schemas.py         #   Contrats de donnees (Pydantic) partages
 │   ├── computer_vision/          #   BRIQUE 1 - Vision (Azure / Custom Vision / local / mock)
 │   ├── machine_learning/         #   BRIQUE 3 - Azure ML : cout + valeur (+ mock)
-│   ├── services/history_api.py   #   API externe d'historique vehicule (+ mock)
 │   ├── llm/                      #   Acces LLM (Ollama / Gemini / Mistral / template)
-│   ├── agents/                  #   BRIQUE 4 - orchestrateur + 4 sous-agents
+│   ├── agents/                  #   BRIQUE 4 - orchestrateur + 3 sous-agents
 │   │   ├── orchestrator.py       #     agent principal (coordination + streaming)
 │   │   ├── evaluation_agent.py   #     sous-agent evaluation mecanique
-│   │   ├── history_agent.py      #     sous-agent verification historique
 │   │   ├── negotiation_agent.py  #     sous-agent negociation de prix
 │   │   └── report_agent.py       #     sous-agent generation de rapport
 │   └── static/                  #   Interface web (HTML/CSS/JS + orchestration live)
