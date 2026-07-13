@@ -12,17 +12,26 @@ _MAKE_NEW_VALUE = {
 }
 
 
-def _estimate_base_value(vehicle: VehicleInfo) -> float:
+def estimate_base_value(vehicle: VehicleInfo) -> float:
+    """Valeur marchande de base. Robuste aux infos manquantes (image seule) :
+    on retombe sur des hypotheses raisonnables pour donner un ordre de grandeur."""
     if vehicle.base_market_value:
         return vehicle.base_market_value
 
-    new_value = _MAKE_NEW_VALUE.get(vehicle.make.lower(), _MAKE_NEW_VALUE["_default"])
-    age = max(0, datetime.now().year - vehicle.year)
+    make = (vehicle.make or "").lower()
+    new_value = _MAKE_NEW_VALUE.get(make, _MAKE_NEW_VALUE["_default"])
+    year = vehicle.year or (datetime.now().year - 8)
+    age = max(0, datetime.now().year - year)
 
+    mileage_km = vehicle.mileage_km if vehicle.mileage_km is not None else 120_000
     age_factor = 0.85 ** age
-    km_penalty = min(0.40, vehicle.mileage_km / 250_000)
+    km_penalty = min(0.40, mileage_km / 250_000)
     value = new_value * age_factor * (1 - km_penalty)
     return round(max(value, new_value * 0.08), 2)
+
+
+# Alias interne conserve pour compatibilite.
+_estimate_base_value = estimate_base_value
 
 
 def estimate_market_value(

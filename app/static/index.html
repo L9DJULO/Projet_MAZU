@@ -16,25 +16,21 @@
   <main>
     <section class="card" id="form-card">
       <h2>1 - Informations du vehicule</h2>
+      <p class="hint">Tous les champs sont optionnels : une inspection peut tourner avec la seule photo.
+        Sans marque / modele / annee / kilometrage, la valorisation et la negociation ne sont pas calculees.</p>
       <form id="inspect-form">
         <div class="grid">
-          <label>Marque
-            <input name="make" value="Renault" required />
+          <label>Marque (optionnel)
+            <input name="make" value="Renault" />
           </label>
-          <label>Modele
-            <input name="model" value="Clio" required />
+          <label>Modele (optionnel)
+            <input name="model" value="Clio" />
           </label>
-          <label>Annee
-            <input name="year" type="number" value="2017" min="1980" max="2030" required />
+          <label>Annee (optionnel)
+            <input name="year" type="number" value="2017" min="1980" max="2030" />
           </label>
-          <label>Kilometrage (km)
-            <input name="mileage_km" type="number" value="98000" min="0" required />
-          </label>
-          <label>VIN (optionnel)
-            <input name="vin" value="VF1RFA00123456789" />
-          </label>
-          <label>Valeur Argus connue EUR (optionnel)
-            <input name="base_market_value" type="number" value="" min="0" />
+          <label>Kilometrage km (optionnel)
+            <input name="mileage_km" type="number" value="98000" min="0" />
           </label>
         </div>
 
@@ -78,12 +74,12 @@
           <ul id="history-list" class="kv-list"></ul>
         </div>
 
-        <div class="card">
+        <div class="card" id="valuation-card">
           <h3>Valorisation</h3>
           <ul id="valuation-list" class="kv-list"></ul>
         </div>
 
-        <div class="card negotiation-card">
+        <div class="card negotiation-card" id="negotiation-card">
           <h3>Negociation</h3>
           <p id="nego-summary"></p>
           <ul id="nego-args"></ul>

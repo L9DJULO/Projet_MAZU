@@ -17,7 +17,7 @@ class OrchestratorAgent:
         self, vehicle: VehicleInfo, images: list[bytes]
     ) -> tuple[InspectionReport, list[dict]]:
         trace = AgentTrace()
-        trace.log(self.name, "demarrage", f"inspection de {vehicle.make} {vehicle.model}")
+        trace.log(self.name, "demarrage", f"inspection de {vehicle.label}")
 
         trace.log(self.name, "delegation", "Computer Vision : detection des dommages")
         vision = detect_damages(images)
@@ -33,18 +33,30 @@ class OrchestratorAgent:
         trace.log(self.name, "delegation", "Sous-agent HISTORIQUE")
         history = HistoryAgent(trace).run(vehicle)
 
-        trace.log(self.name, "delegation", "Machine Learning : valeur marchande")
-        valuation = estimate_market_value(
-            vehicle, evaluation.condition_score, evaluation.cost_estimate
-        )
-        trace.log(
-            self.name,
-            "retour_valeur",
-            f"valeur ajustee {valuation.adjusted_value:.0f} EUR",
-        )
+        # Valorisation et negociation ne sont possibles que si l'on connait le
+        # vehicule (marque/modele/annee/km). En mode "image seule", on s'arrete
+        # a l'evaluation mecanique et a l'historique.
+        valuation = None
+        negotiation = None
+        if vehicle.has_market_info:
+            trace.log(self.name, "delegation", "Machine Learning : valeur marchande")
+            valuation = estimate_market_value(
+                vehicle, evaluation.condition_score, evaluation.cost_estimate
+            )
+            trace.log(
+                self.name,
+                "retour_valeur",
+                f"valeur ajustee {valuation.adjusted_value:.0f} EUR",
+            )
 
-        trace.log(self.name, "delegation", "Sous-agent NEGOCIATION")
-        negotiation = NegotiationAgent(trace).run(valuation, evaluation, history)
+            trace.log(self.name, "delegation", "Sous-agent NEGOCIATION")
+            negotiation = NegotiationAgent(trace).run(valuation, evaluation, history)
+        else:
+            trace.log(
+                self.name,
+                "info",
+                "infos vehicule incompletes : valorisation et negociation ignorees",
+            )
 
         trace.log(self.name, "delegation", "Sous-agent RAPPORT")
         report = ReportAgent(trace).run(

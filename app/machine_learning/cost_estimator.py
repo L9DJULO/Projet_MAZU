@@ -38,7 +38,7 @@ def estimate_repair_cost(
 
 
 def _estimate_mock(damages: list[Damage], vehicle: VehicleInfo) -> CostEstimate:
-    premium = 1.3 if vehicle.make.lower() in _PREMIUM_MAKES else 1.0
+    premium = 1.3 if (vehicle.make or "").lower() in _PREMIUM_MAKES else 1.0
     lines: list[RepairLine] = []
 
     for d in damages:
@@ -57,7 +57,7 @@ def _estimate_mock(damages: list[Damage], vehicle: VehicleInfo) -> CostEstimate:
 
 
 def _build_rows(damages: list[Damage], vehicle: VehicleInfo) -> list[dict]:
-    premium = 1.3 if vehicle.make.lower() in _PREMIUM_MAKES else 1.0
+    premium = 1.3 if (vehicle.make or "").lower() in _PREMIUM_MAKES else 1.0
     return [
         {
             "damage_type": d.type.value,

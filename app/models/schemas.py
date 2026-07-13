@@ -7,12 +7,21 @@ from pydantic import BaseModel, Field
 
 
 class VehicleInfo(BaseModel):
-    make: str
-    model: str
-    year: int = Field(..., ge=1980, le=2030)
-    mileage_km: int = Field(..., ge=0)
+    make: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = Field(None, ge=1980, le=2030)
+    mileage_km: Optional[int] = Field(None, ge=0)
     vin: Optional[str] = None
     base_market_value: Optional[float] = None
+
+    @property
+    def label(self) -> str:
+        parts = [p for p in (self.make, self.model, str(self.year) if self.year else None) if p]
+        return " ".join(parts) or "vehicule (details non fournis)"
+
+    @property
+    def has_market_info(self) -> bool:
+        return bool(self.make and self.model and self.year and self.mileage_km)
 
 
 class DamageType(str, Enum):
@@ -42,6 +51,10 @@ class VisionResult(BaseModel):
     damages: list[Damage] = Field(default_factory=list)
     images_analyzed: int = 0
     provider: str = "mock"
+    # Verdict d'etat global du vehicule (0-100) quand le modele classe
+    # l'ensemble du vehicule (ex: "Destroyed"/"Good"). None = mode par dommages.
+    condition_score: Optional[int] = None
+    total_loss: bool = False
 
 
 class RepairLine(BaseModel):
@@ -67,6 +80,7 @@ class MechanicalAssessment(BaseModel):
     condition_label: str
     cost_estimate: CostEstimate
     summary: str
+    total_loss: bool = False
 
 
 class HistoryReport(BaseModel):
@@ -93,7 +107,7 @@ class InspectionReport(BaseModel):
     vision: VisionResult
     mechanical: MechanicalAssessment
     history: HistoryReport
-    valuation: MarketValuation
-    negotiation: NegotiationStrategy
+    valuation: Optional[MarketValuation] = None
+    negotiation: Optional[NegotiationStrategy] = None
     executive_summary: str
     generated_at: str

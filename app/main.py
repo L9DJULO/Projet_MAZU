@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -49,21 +50,17 @@ def health() -> dict:
 
 @app.post("/api/inspect")
 async def inspect(
-    make: str = Form(...),
-    model: str = Form(...),
-    year: int = Form(...),
-    mileage_km: int = Form(...),
-    vin: str = Form(""),
-    base_market_value: float = Form(0),
+    make: Optional[str] = Form(None),
+    model: Optional[str] = Form(None),
+    year: Optional[int] = Form(None),
+    mileage_km: Optional[int] = Form(None),
     images: list[UploadFile] = File(default=[]),
 ) -> JSONResponse:
     vehicle = VehicleInfo(
-        make=make,
-        model=model,
+        make=(make or None),
+        model=(model or None),
         year=year,
         mileage_km=mileage_km,
-        vin=vin or None,
-        base_market_value=base_market_value or None,
     )
 
     image_bytes: list[bytes] = []
@@ -72,7 +69,7 @@ async def inspect(
         if content:
             image_bytes.append(content)
     if not image_bytes:
-        image_bytes = [f"{make}{model}{year}".encode()]
+        image_bytes = [vehicle.label.encode()]
 
     report, trace = OrchestratorAgent().run(vehicle, image_bytes)
 

@@ -48,6 +48,7 @@ def _detect_with_local_http(image_bytes_list: list[bytes]) -> VisionResult:
 
     damages: list[Damage] = []
     successes = 0
+    damage_ratios: list[float] = []
     with httpx.Client(verify=not is_local, timeout=30) as client:
         for image_bytes in image_bytes_list:
             try:
@@ -61,23 +62,33 @@ def _detect_with_local_http(image_bytes_list: list[bytes]) -> VisionResult:
             except Exception:
                 continue
             successes += 1
-            damage = _map_condition_prediction(predictions)
+            damage, ratio = _map_condition_prediction(predictions)
+            damage_ratios.append(ratio)
             if damage is not None:
                 damages.append(damage)
 
     if successes == 0:
         return _detect_mock(image_bytes_list)
 
+    # Verdict d'etat global : on retient l'image la plus degradee (pire cas),
+    # car une seule photo d'epave suffit a qualifier le vehicule.
+    worst_ratio = max(damage_ratios) if damage_ratios else 0.0
+    condition_score = int(round(100 * (1 - worst_ratio)))
+    total_loss = worst_ratio >= 0.75
+
     return VisionResult(
         damages=damages,
         images_analyzed=len(image_bytes_list),
         provider="local_http",
+        condition_score=condition_score,
+        total_loss=total_loss,
     )
 
 
-def _map_condition_prediction(predictions: list[dict]) -> Damage | None:
+def _map_condition_prediction(predictions: list[dict]) -> tuple[Damage | None, float]:
+    """Retourne (dommage representatif | None, ratio de degradation 0..1)."""
     if not predictions:
-        return None
+        return None, 0.0
 
     top = max(predictions, key=lambda p: p.get("probability", 0.0))
     top_tag = str(top.get("tagName", "")).strip() or "inconnu"
@@ -100,8 +111,10 @@ def _map_condition_prediction(predictions: list[dict]) -> Damage | None:
     else:
         score = top.get("probability", 0.0)
 
+    ratio = round(float(min(max(score, 0.0), 1.0)), 4)
+
     if score < 0.35:
-        return None
+        return None, ratio
     if score < 0.6:
         severity = Severity.MINOR
     elif score < 0.8:
@@ -109,13 +122,14 @@ def _map_condition_prediction(predictions: list[dict]) -> Damage | None:
     else:
         severity = Severity.SEVERE
 
-    return Damage(
+    damage = Damage(
         type=DamageType.DENT,
         severity=severity,
         location=f"etat carrosserie (classe '{top_tag}')",
         confidence=round(float(score), 2),
         bounding_box=None,
     )
+    return damage, ratio
 
 
 def _seed_from_images(image_bytes_list: list[bytes]) -> int:

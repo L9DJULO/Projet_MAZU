@@ -14,7 +14,7 @@ def fetch_history(vehicle: VehicleInfo) -> HistoryReport:
 
 
 def _fetch_mock(vehicle: VehicleInfo) -> HistoryReport:
-    key = vehicle.vin or f"{vehicle.make}{vehicle.model}{vehicle.year}"
+    key = vehicle.vin or vehicle.label
     digest = hashlib.sha256(key.encode()).digest()
 
     accidents = digest[0] % 3
@@ -22,7 +22,10 @@ def _fetch_mock(vehicle: VehicleInfo) -> HistoryReport:
     stolen_flag = digest[2] % 23 == 0
     open_recalls = digest[3] % 2
 
-    odometer_consistent = not (vehicle.year < 2015 and vehicle.mileage_km < 40_000)
+    if vehicle.year is not None and vehicle.mileage_km is not None:
+        odometer_consistent = not (vehicle.year < 2015 and vehicle.mileage_km < 40_000)
+    else:
+        odometer_consistent = True
 
     notes_parts = []
     if accidents:
