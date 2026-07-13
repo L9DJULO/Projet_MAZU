@@ -124,4 +124,66 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .trace-list li { margin-bottom: 4px; }
 .trace-list b { color: var(--ink); }
 
+/* --- Orchestration multi-agents en direct --- */
+.orch-hint { color: var(--muted); font-size: 0.88rem; margin-top: -4px; }
+
+.agent-nodes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+.agent-node {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+  background: #fbfcfe;
+  transition: all 0.25s ease;
+  position: relative;
+}
+.agent-node .node-label { font-size: 0.82rem; font-weight: 700; }
+.agent-node .node-kind { font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.agent-node.kind-orchestrator { border-color: var(--primary); background: #eef1ff; }
+.agent-node.active {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 6px 18px rgba(91,108,255,0.35);
+  border-color: var(--primary);
+}
+.agent-node.active-recv { border-color: var(--green); box-shadow: 0 6px 18px rgba(46,158,107,0.3); }
+.agent-node .node-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: #cbd2e0;
+  position: absolute; top: 8px; right: 8px;
+}
+.agent-node.done .node-dot { background: var(--green); }
+.agent-node.active .node-dot { background: var(--primary); animation: blink 0.8s infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }
+
+.agent-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.feed-msg {
+  border-left: 3px solid var(--primary);
+  background: #f7f8fc;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
+  animation: slidein 0.3s ease;
+}
+.feed-msg.type-resultat { border-left-color: var(--green); }
+.feed-msg .msg-route { font-weight: 700; font-size: 0.8rem; margin-bottom: 2px; }
+.feed-msg .msg-route .arrow { color: var(--muted); margin: 0 6px; }
+.feed-msg .msg-text { color: var(--ink); }
+.feed-msg .msg-badge {
+  float: right; font-size: 0.64rem; font-weight: 700; text-transform: uppercase;
+  padding: 1px 7px; border-radius: 10px; background: #e5e9f5; color: var(--primary-dark);
+}
+.feed-msg.type-resultat .msg-badge { background: #dcf1e7; color: var(--green); }
+@keyframes slidein { from { opacity: 0; transform: translateY(8px); } }
+
 footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 20px; }

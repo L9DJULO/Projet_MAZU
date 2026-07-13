@@ -16,7 +16,9 @@ Le systeme demontre les **4 capacites** exigees par le sujet :
 > Le projet demarre sans aucun compte Azure ni cle. Par defaut tout
 > fonctionne en mode **mock** (services simules, deterministes). Le code est
 > neanmoins cable sur les vrais SDK Azure : il suffit de passer `AZURE_MODE=real`
-> et de fournir les cles pour basculer en production. Voir [docs/rapport.md](docs/rapport.md).
+> et de fournir les cles pour basculer en production.
+
+![Diagramme d'architecture](architecture-azure.png)
 
 ---
 
@@ -132,6 +134,18 @@ invalides retombent automatiquement sur le simulateur, pour ne jamais planter.
 Pour demontrer le conteneur en soutenance : remplir le formulaire, **ajouter une
 photo de vehicule** via le champ fichier, puis lancer l'inspection.
 
+Le modele utilise est fourni dans `custom_vision_model/` (modele Azure Custom
+Vision exporte, labels `Good` / `Destroyed`). Pour le construire et le lancer :
+
+```bash
+cd custom_vision_model
+docker build -t autoexpert-vision .
+docker run -p 127.0.0.1:88:80 -d autoexpert-vision
+```
+
+Il expose alors `POST http://localhost:88/image`. Details dans
+`custom_vision_model/README.txt`.
+
 ### 3. Verifier que le serveur repond (optionnel)
 
 ```bash
@@ -163,42 +177,38 @@ coherence des couts, orchestration de bout en bout).
 
 ```
 Projet_MAZU/
-├── app/
-│   ├── main.py                 # API web FastAPI (brique Edge/Docker)
-│   ├── config.py               # Configuration (.env), bascule mock/real
-│   ├── models/schemas.py       # Contrats de donnees (Pydantic) partages
-│   ├── computer_vision/        # BRIQUE 1 - Azure AI Vision (+ mock)
-│   ├── machine_learning/       # BRIQUE 3 - Azure ML : cout + valeur (+ mock)
-│   ├── services/history_api.py # API externe d'historique vehicule (+ mock)
-│   ├── llm/                    # Acces LLM Ollama (+ fallback template)
-│   ├── agents/                # BRIQUE 4 - orchestrateur + 4 sous-agents
-│   │   ├── orchestrator.py     #   agent principal (coordination)
-│   │   ├── evaluation_agent.py #   sous-agent evaluation mecanique
-│   │   ├── history_agent.py    #   sous-agent verification historique
-│   │   ├── negotiation_agent.py#   sous-agent negociation de prix
-│   │   └── report_agent.py     #   sous-agent generation de rapport
-│   └── static/                # Interface web (HTML/CSS/JS)
-├── data/sample_vehicles.json   # Vehicules d'exemple
-├── tests/test_pipeline.py      # Tests automatises
-├── demo_cli.py                 # Demo sans navigateur
-├── Dockerfile / docker-compose.yml
-├── docs/
-│   ├── rapport.md              # RAPPORT ACADEMIQUE (a lire / rendre)
-│   └── architecture.md         # Schema et flux detailles
-└── .env.example                # Configuration (copier en .env)
+├── README.md                     # Ce fichier
+├── requirements.txt              # Dependances Python
+├── Dockerfile                    # Image de la webapp (brique Edge)
+├── docker-compose.yml            # Orchestration locale (web + ollama optionnel)
+├── .env.example                  # Modele de configuration (copier en .env)
+├── demo_cli.py                   # Demo sans navigateur
+│
+├── app/                          # Application principale
+│   ├── main.py                   #   API web FastAPI (endpoints /api/inspect + stream)
+│   ├── config.py                 #   Configuration (.env), bascule mock/real
+│   ├── models/schemas.py         #   Contrats de donnees (Pydantic) partages
+│   ├── computer_vision/          #   BRIQUE 1 - Vision (Azure / Custom Vision / local / mock)
+│   ├── machine_learning/         #   BRIQUE 3 - Azure ML : cout + valeur (+ mock)
+│   ├── services/history_api.py   #   API externe d'historique vehicule (+ mock)
+│   ├── llm/                      #   Acces LLM (Ollama / Gemini / Mistral / template)
+│   ├── agents/                  #   BRIQUE 4 - orchestrateur + 4 sous-agents
+│   │   ├── orchestrator.py       #     agent principal (coordination + streaming)
+│   │   ├── evaluation_agent.py   #     sous-agent evaluation mecanique
+│   │   ├── history_agent.py      #     sous-agent verification historique
+│   │   ├── negotiation_agent.py  #     sous-agent negociation de prix
+│   │   └── report_agent.py       #     sous-agent generation de rapport
+│   └── static/                  #   Interface web (HTML/CSS/JS + orchestration live)
+│
+├── vision_service/               # Service vision de secours (stub Custom Vision)
+├── custom_vision_model/          # Modele Azure Custom Vision exporte (conteneur port 88)
+│
+├── data/sample_vehicles.json     # Vehicules d'exemple
+├── tests/test_pipeline.py        # Tests automatises
+└── architecture-azure.png        # Diagramme d'architecture
 ```
 
 ---
-
-## Documentation
-
-| Document | Contenu |
-|----------|---------|
-| [docs/rapport.md](docs/rapport.md) | Rapport academique complet (a rendre) |
-| [docs/architecture.md](docs/architecture.md) | Schema d'architecture et flux d'orchestration |
-| [docs/azure-deployment.md](docs/azure-deployment.md) | Brancher le projet sur Azure (suit le tutoriel ML Designer du cours) |
-| [docs/mvp-et-use-cases.md](docs/mvp-et-use-cases.md) | MVP, cas d'usage multiples, iterations |
-| [docs/presentation.md](docs/presentation.md) | Script de soutenance 15 min + mapping des 4 capacites |
 
 ## Passer en mode Azure reel
 
@@ -206,6 +216,5 @@ Projet_MAZU/
 2. Renseigner AZURE_MODE=real + les cles Azure Vision et/ou Azure ML.
 3. (Optionnel) LLM_MODE=ollama ou LLM_MODE=gemini pour des syntheses par LLM.
 
-Le detail pas-a-pas (Computer Vision, Custom Vision, entrainement et deploiement
-Azure ML, consommation REST, nettoyage) est dans
-[docs/azure-deployment.md](docs/azure-deployment.md).
+Chaque brique bascule automatiquement du mode mock au service Azure reel des
+que la cle correspondante est fournie, sans modifier le code.
