@@ -1,0 +1,13 @@
+{
+  "DomainType": "Classification",
+  "Platform": "DockerFile",
+  "Flavor": "Linux",
+  "ExporterVersion": "2.2",
+  "ExportedDate": "2026-06-25T19:10:13.415519Z",
+  "IterationId": "7db9849c-ae9d-40ce-9b76-8624692c1ab9",
+  "ModelFileName": "model.tflite",
+  "LabelFileName": "labels.txt",
+  "MetadataPropsFileName": "metadata_properties.json",
+  "ModelFileSHA1": "296c7ea6da1891efbf38e25ec84fe93e87d90b03",
+  "SchemaVersion": "1.0"
+}
