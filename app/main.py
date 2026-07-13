@@ -30,10 +30,17 @@ def index() -> str:
 @app.get("/api/health")
 def health() -> dict:
     s = get_settings()
+    if s.vision_is_local_http:
+        vision = "local_http"
+    elif s.vision_is_real:
+        vision = s.vision_provider
+    else:
+        vision = "mock"
     return {
         "status": "ok",
         "azure_mode": s.azure_mode,
-        "vision": s.vision_provider if s.vision_is_real else "mock",
+        "vision": vision,
+        "vision_endpoint": s.azure_vision_endpoint if s.vision_is_local_http else None,
         "ml": "azure" if s.ml_is_real else "mock",
         "llm_mode": s.llm_mode,
         "history": s.history_api_base,

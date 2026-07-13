@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     azure_mode: Literal["mock", "real"] = "mock"
 
-    vision_provider: Literal["image_analysis", "custom_vision"] = "image_analysis"
+    vision_provider: Literal["image_analysis", "custom_vision", "local_http"] = "image_analysis"
     azure_vision_endpoint: str = ""
     azure_vision_key: str = ""
     custom_vision_endpoint: str = ""
@@ -34,6 +34,10 @@ class Settings(BaseSettings):
 
     history_api_base: str = "mock"
     history_api_key: str = ""
+
+    @property
+    def vision_is_local_http(self) -> bool:
+        return self.vision_provider == "local_http" and bool(self.azure_vision_endpoint)
 
     @property
     def vision_is_real(self) -> bool:

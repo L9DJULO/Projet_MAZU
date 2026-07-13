@@ -22,11 +22,100 @@ _ZONE_DAMAGES = {
 
 def detect_damages(image_bytes_list: list[bytes]) -> VisionResult:
     settings = get_settings()
+    if settings.vision_is_local_http:
+        return _detect_with_local_http(image_bytes_list)
     if settings.vision_is_real:
         if settings.vision_provider == "custom_vision":
             return _detect_with_custom_vision(image_bytes_list)
         return _detect_with_azure(image_bytes_list)
     return _detect_mock(image_bytes_list)
+
+
+_GOOD_TAGS = {"good", "intact", "clean", "ok", "sain", "bon", "none"}
+_BAD_HINTS = {
+    "destroyed", "damaged", "damage", "bad", "poor", "accident", "broken",
+    "dent", "scratch", "rust", "endommage", "abime", "casse", "epave",
+}
+
+
+def _detect_with_local_http(image_bytes_list: list[bytes]) -> VisionResult:
+    import httpx
+
+    settings = get_settings()
+    base = settings.azure_vision_endpoint.rstrip("/")
+    url = f"{base}/image"
+    is_local = "localhost" in base or "127.0.0.1" in base
+
+    damages: list[Damage] = []
+    successes = 0
+    with httpx.Client(verify=not is_local, timeout=30) as client:
+        for image_bytes in image_bytes_list:
+            try:
+                resp = client.post(
+                    url,
+                    content=image_bytes,
+                    headers={"Content-Type": "application/octet-stream"},
+                )
+                resp.raise_for_status()
+                predictions = resp.json().get("predictions", [])
+            except Exception:
+                continue
+            successes += 1
+            damage = _map_condition_prediction(predictions)
+            if damage is not None:
+                damages.append(damage)
+
+    if successes == 0:
+        return _detect_mock(image_bytes_list)
+
+    return VisionResult(
+        damages=damages,
+        images_analyzed=len(image_bytes_list),
+        provider="local_http",
+    )
+
+
+def _map_condition_prediction(predictions: list[dict]) -> Damage | None:
+    if not predictions:
+        return None
+
+    top = max(predictions, key=lambda p: p.get("probability", 0.0))
+    top_tag = str(top.get("tagName", "")).strip() or "inconnu"
+
+    good_prob = max(
+        (p.get("probability", 0.0) for p in predictions
+         if str(p.get("tagName", "")).lower() in _GOOD_TAGS),
+        default=0.0,
+    )
+    bad_prob = max(
+        (p.get("probability", 0.0) for p in predictions
+         if any(h in str(p.get("tagName", "")).lower() for h in _BAD_HINTS)),
+        default=0.0,
+    )
+
+    if bad_prob > 0:
+        score = bad_prob
+    elif good_prob > 0:
+        score = 1.0 - good_prob
+    else:
+        score = top.get("probability", 0.0)
+
+    if score < 0.35:
+        return None
+    if score < 0.6:
+        severity = Severity.MINOR
+    elif score < 0.8:
+        severity = Severity.MODERATE
+    else:
+        severity = Severity.SEVERE
+
+    return Damage(
+        type=DamageType.DENT,
+        severity=severity,
+        location=f"etat carrosserie (classe '{top_tag}')",
+        confidence=round(float(score), 2),
+        bounding_box=None,
+    )
 
 
 def _seed_from_images(image_bytes_list: list[bytes]) -> int:

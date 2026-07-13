@@ -66,6 +66,88 @@ docker compose --profile llm up --build
 
 ---
 
+## Faire la demo (soutenance)
+
+### 1. Demarrer l'application
+
+Depuis le dossier du projet, environnement virtuel active :
+
+```bash
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Sous Windows PowerShell, sans activer le venv :
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Puis ouvrir http://127.0.0.1:8000 dans le navigateur.
+
+Pour appuyer la capacite Edge, on peut aussi lancer via Docker :
+
+```bash
+docker compose up --build
+```
+
+### 2. Deroule de la demo (environ 3 minutes)
+
+1. Montrer le badge de mode en haut a droite (CV / ML / LLM) : il prouve que
+   l'app sait basculer entre mock et services Azure.
+2. Cliquer sur **"Charger un exemple"** (charge un cas BMW Serie 3 realiste).
+3. Cliquer sur **"Lancer l'inspection"**.
+4. Commenter le rapport qui s'affiche :
+   - **Dommages detectes** = capacite Computer Vision.
+   - **Evaluation mecanique + cout** et **valorisation** = capacite Machine Learning.
+   - **Historique** = appel a l'API externe.
+   - **Negociation** = sous-agent de negociation.
+   - **Journal des agents** (en bas) = montre l'orchestrateur qui delegue aux
+     sous-agents, dans l'ordre : capacite Agentique.
+5. Relancer avec un autre exemple pour montrer un profil different (ex. saisir un
+   vieux vehicule a faible kilometrage declenche l'alerte "km incoherent").
+
+### Brancher la vision sur un conteneur local (Custom Vision exporte)
+
+Le projet peut appeler un modele de vision qui tourne en local (par ex. un
+modele Azure Custom Vision exporte en conteneur Docker/WSL, qui expose
+`POST /image` et renvoie un tableau `predictions`).
+
+Dans `.env` :
+
+```
+VISION_PROVIDER=local_http
+AZURE_VISION_ENDPOINT=http://localhost:88
+```
+
+Comportement :
+- Le module vision envoie chaque image uploadee au conteneur, sur `/image`.
+- La reponse (classification, ex. tags `Good` / `Destroyed`) est traduite en
+  dommage(s) avec une severite proportionnelle a la probabilite.
+- Le badge en haut de la page affiche alors `CV:local_http`.
+
+Important pour la demo : ce mode ne s'active reellement que si l'on **uploade
+une vraie photo**. Le bouton "Charger un exemple" (sans photo) et les entrees
+invalides retombent automatiquement sur le simulateur, pour ne jamais planter.
+
+Pour demontrer le conteneur en soutenance : remplir le formulaire, **ajouter une
+photo de vehicule** via le champ fichier, puis lancer l'inspection.
+
+### 3. Verifier que le serveur repond (optionnel)
+
+```bash
+curl http://127.0.0.1:8000/api/health
+```
+
+### 4. Arreter le serveur
+
+Fermer le terminal, ou sous PowerShell :
+
+```powershell
+Get-Process python | Where-Object { $_.Path -like '*Projet_MAZU*' } | Stop-Process -Force
+```
+
+---
+
 ## Tests
 
 ```bash
