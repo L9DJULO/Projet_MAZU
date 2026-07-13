@@ -12,20 +12,20 @@ document.getElementById("sample-btn").addEventListener("click", () => {
   f.base_market_value.value = "";
 });
 
+const AGENT_LABELS = {};
+
 document.getElementById("inspect-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = document.getElementById("submit-btn");
   btn.disabled = true;
   document.getElementById("results").classList.add("hidden");
+  document.getElementById("orchestration").classList.add("hidden");
   document.getElementById("loading").classList.remove("hidden");
 
   const formData = new FormData(e.target);
 
   try {
-    const resp = await fetch("/api/inspect", { method: "POST", body: formData });
-    if (!resp.ok) throw new Error("Erreur serveur " + resp.status);
-    const data = await resp.json();
-    render(data);
+    await runStream(formData);
   } catch (err) {
     alert("Echec de l'inspection : " + err.message);
   } finally {
@@ -33,6 +33,80 @@ document.getElementById("inspect-form").addEventListener("submit", async (e) => 
     document.getElementById("loading").classList.add("hidden");
   }
 });
+
+async function runStream(formData) {
+  const resp = await fetch("/api/inspect/stream", { method: "POST", body: formData });
+  if (!resp.ok || !resp.body) throw new Error("Erreur serveur " + resp.status);
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let doneData = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, idx).trim();
+      buffer = buffer.slice(idx + 1);
+      if (!line) continue;
+      const ev = JSON.parse(line);
+      if (ev.event === "start") initOrchestration(ev);
+      else if (ev.event === "message") pushMessage(ev);
+      else if (ev.event === "done") doneData = ev;
+    }
+  }
+
+  document.querySelectorAll(".agent-node").forEach(n => {
+    n.classList.remove("active", "active-recv");
+    n.classList.add("done");
+  });
+
+  if (doneData) render(doneData);
+}
+
+function initOrchestration(ev) {
+  document.getElementById("loading").classList.add("hidden");
+  const section = document.getElementById("orchestration");
+  section.classList.remove("hidden");
+  const nodes = document.getElementById("agent-nodes");
+  const feed = document.getElementById("agent-feed");
+  feed.innerHTML = "";
+  nodes.innerHTML = "";
+  ev.agents.forEach(a => {
+    AGENT_LABELS[a.id] = a.label;
+    nodes.insertAdjacentHTML("beforeend", `
+      <div class="agent-node kind-${a.kind}" id="node-${a.id}">
+        <span class="node-dot"></span>
+        <div class="node-label">${a.label}</div>
+        <div class="node-kind">${a.kind === "orchestrator" ? "orchestrateur" : a.kind === "service" ? "service" : "sous-agent"}</div>
+      </div>`);
+  });
+  section.scrollIntoView({ behavior: "smooth" });
+}
+
+function pushMessage(ev) {
+  document.querySelectorAll(".agent-node.active, .agent-node.active-recv")
+    .forEach(n => n.classList.remove("active", "active-recv"));
+  const fromNode = document.getElementById("node-" + ev.from);
+  const toNode = document.getElementById("node-" + ev.to);
+  if (fromNode) { fromNode.classList.add("active"); fromNode.classList.add("done"); }
+  if (toNode) toNode.classList.add("active-recv");
+
+  const feed = document.getElementById("agent-feed");
+  const label = (id) => AGENT_LABELS[id] || id;
+  const badge = ev.type === "resultat" ? "reponse" : "delegue";
+  feed.insertAdjacentHTML("beforeend", `
+    <div class="feed-msg type-${ev.type}">
+      <div class="msg-route">${label(ev.from)}<span class="arrow">&rarr;</span>${label(ev.to)}
+        <span class="msg-badge">${badge}</span>
+      </div>
+      <div class="msg-text">${ev.text}</div>
+    </div>`);
+  feed.scrollTop = feed.scrollHeight;
+}
 
 function render({ report, trace }) {
   const results = document.getElementById("results");

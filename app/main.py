@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import iterate_in_threadpool
 
 from app.agents import OrchestratorAgent
 from app.config import get_settings
@@ -23,8 +25,12 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
-def index() -> str:
-    return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+def index() -> HTMLResponse:
+    html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(
+        content=html,
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+    )
 
 
 @app.get("/api/health")
@@ -47,6 +53,28 @@ def health() -> dict:
     }
 
 
+def _build_vehicle(make, model, year, mileage_km, vin, base_market_value) -> VehicleInfo:
+    return VehicleInfo(
+        make=make,
+        model=model,
+        year=year,
+        mileage_km=mileage_km,
+        vin=vin or None,
+        base_market_value=base_market_value or None,
+    )
+
+
+async def _read_images(images: list[UploadFile], fallback_key: str) -> list[bytes]:
+    image_bytes: list[bytes] = []
+    for f in images:
+        content = await f.read()
+        if content:
+            image_bytes.append(content)
+    if not image_bytes:
+        image_bytes = [fallback_key.encode()]
+    return image_bytes
+
+
 @app.post("/api/inspect")
 async def inspect(
     make: str = Form(...),
@@ -57,28 +85,29 @@ async def inspect(
     base_market_value: float = Form(0),
     images: list[UploadFile] = File(default=[]),
 ) -> JSONResponse:
-    vehicle = VehicleInfo(
-        make=make,
-        model=model,
-        year=year,
-        mileage_km=mileage_km,
-        vin=vin or None,
-        base_market_value=base_market_value or None,
-    )
-
-    image_bytes: list[bytes] = []
-    for f in images:
-        content = await f.read()
-        if content:
-            image_bytes.append(content)
-    if not image_bytes:
-        image_bytes = [f"{make}{model}{year}".encode()]
-
+    vehicle = _build_vehicle(make, model, year, mileage_km, vin, base_market_value)
+    image_bytes = await _read_images(images, f"{make}{model}{year}")
     report, trace = OrchestratorAgent().run(vehicle, image_bytes)
+    return JSONResponse({"report": report.model_dump(), "trace": trace})
 
-    return JSONResponse(
-        {
-            "report": report.model_dump(),
-            "trace": trace,
-        }
-    )
+
+@app.post("/api/inspect/stream")
+async def inspect_stream(
+    make: str = Form(...),
+    model: str = Form(...),
+    year: int = Form(...),
+    mileage_km: int = Form(...),
+    vin: str = Form(""),
+    base_market_value: float = Form(0),
+    images: list[UploadFile] = File(default=[]),
+) -> StreamingResponse:
+    vehicle = _build_vehicle(make, model, year, mileage_km, vin, base_market_value)
+    image_bytes = await _read_images(images, f"{make}{model}{year}")
+
+    generator = OrchestratorAgent().run_iter(vehicle, image_bytes, pace=0.5)
+
+    async def event_stream():
+        async for event in iterate_in_threadpool(generator):
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
