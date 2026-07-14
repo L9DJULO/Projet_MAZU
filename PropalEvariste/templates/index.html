@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vision Pocket</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <h1>Azure Project</h1>
+        <p class="lede">
+          Jules Lange, Simon Arbiser, Evariste Balvay, Arthur Goullet-De-Rugy
+        </p>
+      </section>
+
+      <section class="panel">
+        <form id="vision-form" class="form">
+          <div class="field-row">
+            <label>
+              Mode
+              <select id="mode" name="mode">
+                <option value="local">Local</option>
+                <option value="azure">Azure Cloud</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-row azure-only hidden" id="azure-config">
+            <label>
+              Azure Prediction Key
+              <input id="azure-key" name="azureKey" type="password" placeholder="Colle ta clé ici" />
+            </label>
+          </div>
+
+          <label class="dropzone" for="image-file">
+            <input id="image-file" name="imageFile" type="file" accept="image/*" />
+            <span class="dropzone-title">Choisir une image</span>
+            <span class="dropzone-hint">PNG, JPG, WebP, etc.</span>
+          </label>
+
+          <button id="submit-btn" type="submit">Analyser l'image</button>
+        </form>
+
+        <div class="preview-grid">
+          <figure class="preview">
+            <img id="preview-image" alt="Aperçu de l'image" />
+            <figcaption id="preview-caption">Aucune image sélectionnée</figcaption>
+          </figure>
+
+          <section class="result">
+            <div class="result-header">
+              <h2>Réponse</h2>
+              <span id="status-pill" class="pill">En attente</span>
+            </div>
+            <pre id="output">Sélectionne une image puis lance l'analyse.</pre>
+          </section>
+        </div>
+
+        <div id="vehicle-panel" class="vehicle-panel hidden">
+          <div class="vehicle-panel-header">
+            <div>
+              <p class="eyebrow">Étape suivante</p>
+              <h2 id="vehicle-panel-title">Renseigner les informations du véhicule</h2>
+            </div>
+          </div>
+
+          <p class="vehicle-panel-intro">
+            La vision a produit un premier verdict. Complète les champs ci-dessous pour envoyer le dossier complet.
+          </p>
+
+          <div class="vehicle-panel-summary">
+            <span>État estimé</span>
+            <strong id="estimated-condition">En attente</strong>
+          </div>
+
+          <form id="vehicle-form" class="vehicle-form">
+            <div class="field-row">
+              <label>
+                Modèle
+                <input id="vehicle-model" name="modele" type="text" placeholder="Peugeot 208" required />
+              </label>
+              <label>
+                Année
+                <input id="vehicle-year" name="annee" type="number" min="1900" max="2100" placeholder="2021" required />
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                Kilométrage (km)
+                <input id="vehicle-mileage" name="kilometrage_km" type="number" min="0" step="1" placeholder="54000" required />
+              </label>
+              <label>
+                Carburant
+                <select id="vehicle-fuel" name="carburant" required>
+                  <option value="">Choisir</option>
+                  <option value="Essence">Essence</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hybride">Hybride</option>
+                  <option value="Electrique">Electrique</option>
+                  <option value="GPL">GPL</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                Nombre de propriétaires
+                <input id="vehicle-owners" name="nb_proprietaires" type="number" min="0" step="1" placeholder="2" required />
+              </label>
+              <label>
+                Coût d'achat neuf (€)
+                <input id="vehicle-new-price" name="cout_achat_neuf_eur" type="number" min="0" step="1" placeholder="28000" required />
+              </label>
+            </div>
+
+            <div class="panel-actions">
+              <button id="vehicle-submit-btn" type="submit">Envoyer le dossier</button>
+            </div>
+          </form>
+
+          <section class="result result-compact price-result">
+            <div class="result-header">
+              <h2>Prix estimé</h2>
+              <span class="pill">Sortie du modèle de prix</span>
+            </div>
+            <pre id="price-output">Le prix estimé final apparaîtra ici.</pre>
+          </section>
+
+          <section class="result result-compact recommendation-result">
+            <div class="result-header">
+              <h2>Recommandation atelier</h2>
+              <span class="pill">Multi-agents</span>
+            </div>
+            <pre id="recommendation-output">La recommandation finale apparaîtra ici après l'analyse du dossier.</pre>
+          </section>
+
+          <section class="result result-compact transcript-result">
+            <div class="result-header">
+              <h2>Discussion entre agents</h2>
+              <span class="pill">Transcrit</span>
+            </div>
+            <div id="agent-transcript" class="agent-transcript">
+              <p class="transcript-empty">La discussion apparaîtra ici une fois la recommandation générée.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
