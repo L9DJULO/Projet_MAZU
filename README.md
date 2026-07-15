@@ -145,6 +145,31 @@ docker run -p 127.0.0.1:88:80 -d autoexpert-vision
 Il expose alors `POST http://localhost:88/image`. Details dans
 `custom_vision_model/README.txt`.
 
+### Brancher Azure Custom Vision en classification
+
+Pour appeler directement un modele Custom Vision publie dans Azure avec une URL
+du type `/classify/iterations/.../image`, utiliser le provider `custom_vision`
+et declarer le modele en mode classification :
+
+```env
+AZURE_MODE=real
+VISION_PROVIDER=custom_vision
+CUSTOM_VISION_ENDPOINT=https://germanywestcentral.api.cognitive.microsoft.com
+CUSTOM_VISION_KEY=<prediction-key>
+CUSTOM_VISION_PROJECT_ID=<project-id>
+CUSTOM_VISION_ITERATION=Iteration1
+CUSTOM_VISION_MODE=classify
+```
+
+Le code construit alors :
+
+```text
+{CUSTOM_VISION_ENDPOINT}/customvision/v3.0/Prediction/{CUSTOM_VISION_PROJECT_ID}/classify/iterations/{CUSTOM_VISION_ITERATION}/image
+```
+
+Pour un modele Custom Vision de detection avec bounding boxes, garder
+`CUSTOM_VISION_MODE=detect`.
+
 ### 3. Verifier que le serveur repond (optionnel)
 
 ```bash

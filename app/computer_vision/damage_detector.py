@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+from io import BytesIO
 
 from app.config import get_settings
 from app.models.schemas import Damage, DamageType, Severity, VisionResult
@@ -211,9 +212,11 @@ def _detect_with_custom_vision(image_bytes_list: list[bytes]) -> VisionResult:
     import httpx
 
     settings = get_settings()
+    mode = settings.custom_vision_mode
+    endpoint = settings.custom_vision_endpoint.rstrip("/")
     url = (
-        f"{settings.custom_vision_endpoint}/customvision/v3.0/Prediction/"
-        f"{settings.custom_vision_project_id}/detect/iterations/"
+        f"{endpoint}/customvision/v3.0/Prediction/"
+        f"{settings.custom_vision_project_id}/{mode}/iterations/"
         f"{settings.custom_vision_iteration}/image"
     )
     headers = {
@@ -222,18 +225,63 @@ def _detect_with_custom_vision(image_bytes_list: list[bytes]) -> VisionResult:
     }
 
     damages: list[Damage] = []
+    damage_ratios: list[float] = []
     for image_bytes in image_bytes_list:
-        resp = httpx.post(url, headers=headers, content=image_bytes, timeout=30)
+        image_content = _normalize_custom_vision_image(image_bytes)
+        resp = httpx.post(url, headers=headers, content=image_content, timeout=30)
         resp.raise_for_status()
-        for pred in resp.json().get("predictions", []):
+        predictions = resp.json().get("predictions", [])
+        if mode == "classify":
+            damage, ratio = _map_condition_prediction(predictions)
+            damage_ratios.append(ratio)
+            if damage is not None:
+                damages.append(damage)
+            continue
+
+        for pred in predictions:
             if pred.get("probability", 0) < 0.5:
                 continue
             damages.append(_map_custom_vision_prediction(pred))
 
+    if mode == "classify":
+        worst_ratio = max(damage_ratios) if damage_ratios else 0.0
+        condition_score = int(round(100 * (1 - worst_ratio)))
+        total_loss = worst_ratio >= 0.75
+        return VisionResult(
+            damages=damages,
+            images_analyzed=len(image_bytes_list),
+            provider="azure_custom_vision_classify",
+            condition_score=condition_score,
+            total_loss=total_loss,
+        )
+
     return VisionResult(
         damages=damages,
         images_analyzed=len(image_bytes_list),
-        provider="azure_custom_vision",
+        provider="azure_custom_vision_detect",
+    )
+
+
+def _normalize_custom_vision_image(image_bytes: bytes) -> bytes:
+    if not _looks_like_webp(image_bytes):
+        return image_bytes
+
+    try:
+        from PIL import Image
+    except ImportError:
+        return image_bytes
+
+    with Image.open(BytesIO(image_bytes)) as image:
+        out = BytesIO()
+        image.convert("RGB").save(out, format="JPEG", quality=92)
+        return out.getvalue()
+
+
+def _looks_like_webp(image_bytes: bytes) -> bool:
+    return (
+        len(image_bytes) >= 12
+        and image_bytes[:4] == b"RIFF"
+        and image_bytes[8:12] == b"WEBP"
     )
 
 

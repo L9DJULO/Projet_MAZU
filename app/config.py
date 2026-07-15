@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     custom_vision_key: str = ""
     custom_vision_project_id: str = ""
     custom_vision_iteration: str = ""
+    custom_vision_mode: Literal["classify", "detect"] = "detect"
 
     azure_ml_endpoint: str = ""
     azure_ml_key: str = ""

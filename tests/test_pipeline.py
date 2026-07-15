@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 from app.agents import OrchestratorAgent
 from app.computer_vision import detect_damages
+from app.computer_vision import damage_detector
 from app.machine_learning import estimate_market_value, estimate_repair_cost
 from app.models.schemas import InspectionReport, VehicleInfo
 
@@ -52,3 +55,48 @@ def test_premium_make_costs_more():
         estimate_repair_cost(vision.damages, bmw).total_repair_cost
         >= estimate_repair_cost(vision.damages, renault).total_repair_cost
     )
+
+
+def test_custom_vision_classify_maps_condition(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "predictions": [
+                    {"tagName": "Good", "probability": 0.18},
+                    {"tagName": "Destroyed", "probability": 0.82},
+                ]
+            }
+
+    def fake_post(url, headers, content, timeout):
+        calls.append((url, headers, content, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr(
+        damage_detector,
+        "get_settings",
+        lambda: SimpleNamespace(
+            custom_vision_endpoint="https://example.cognitiveservices.azure.com/",
+            custom_vision_key="prediction-key",
+            custom_vision_project_id="project-id",
+            custom_vision_iteration="Iteration1",
+            custom_vision_mode="classify",
+        ),
+    )
+    monkeypatch.setattr("httpx.post", fake_post)
+
+    result = damage_detector._detect_with_custom_vision([b"image-bytes"])
+
+    assert calls[0][0] == (
+        "https://example.cognitiveservices.azure.com/customvision/v3.0/"
+        "Prediction/project-id/classify/iterations/Iteration1/image"
+    )
+    assert calls[0][1]["Prediction-Key"] == "prediction-key"
+    assert result.provider == "azure_custom_vision_classify"
+    assert result.condition_score == 18
+    assert result.total_loss is True
+    assert len(result.damages) == 1
